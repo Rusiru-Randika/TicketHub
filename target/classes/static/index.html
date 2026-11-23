@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TicketHub — Event Ticket Reservation</title>
+  <link rel="stylesheet" href="/assets/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="brand-icon">🎟️</span>
+        <span class="brand-name">TicketHub</span>
+      </div>
+      <div id="userControls" class="user-controls hidden">
+        <span id="userBadge" class="user-badge"></span>
+        <button id="themeToggle" class="btn btn-ghost btn-sm" type="button" title="Toggle Dark Mode">🌓</button>
+        <button id="logoutBtn" class="btn btn-outline-light btn-sm" type="button">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Global Alert Banner -->
+    <div id="alertBanner" class="alert hidden" role="alert">
+      <span id="alertText"></span>
+      <button id="alertClose" class="alert-close" type="button">&times;</button>
+    </div>
+
+    <!-- Auth View -->
+    <section id="authSection" class="auth-wrapper">
+      <div class="card auth-card">
+        <div class="auth-tabs">
+          <button id="showLoginTab" class="tab-btn active" type="button">Login</button>
+          <button id="showRegisterTab" class="tab-btn" type="button">Register</button>
+        </div>
+
+        <!-- Login Form -->
+        <form id="loginForm" class="form-stack">
+          <h2>Sign in to TicketHub</h2>
+          <p class="muted">Use your account or tap a demo account below.</p>
+          <div class="demo-buttons">
+            <button type="button" class="btn btn-chip" data-demo-user="admin" data-demo-pass="admin123">Demo Admin</button>
+            <button type="button" class="btn btn-chip" data-demo-user="organizer" data-demo-pass="organizer123">Demo Organizer</button>
+            <button type="button" class="btn btn-chip" data-demo-user="customer" data-demo-pass="customer123">Demo Customer</button>
+          </div>
+          <label>
+            Username
+            <input id="loginUsername" type="text" required placeholder="e.g. PS/2022/XXX" />
+          </label>
+          <label>
+            Password
+            <input id="loginPassword" type="password" required placeholder="Enter password" />
+          </label>
+          <button type="submit" class="btn btn-primary">Login</button>
+        </form>
+
+        <!-- Register Form -->
+        <form id="registerForm" class="form-stack hidden">
+          <h2>Create Customer Account</h2>
+          <p class="muted">Register with your Student Number as username &amp; password.</p>
+          <label>
+            Username (Student ID)
+            <input id="regUsername" type="text" required minlength="3" placeholder="e.g. PS/2022/XXX" />
+          </label>
+          <label>
+            Full Name
+            <input id="regFullName" type="text" required placeholder="e.g. Rusiru" />
+          </label>
+          <label>
+            Password
+            <input id="regPassword" type="password" required minlength="6" placeholder="At least 6 characters" />
+          </label>
+          <button type="submit" class="btn btn-primary">Register</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- App Dashboard View -->
+    <section id="appSection" class="hidden">
+      <nav class="nav-pills">
+        <button class="nav-pill active" data-view="eventsView" type="button">🎫 Events</button>
+        <button class="nav-pill" data-view="reservationsView" type="button">📋 Reservations</button>
+        <button id="adminNavBtn" class="nav-pill hidden" data-view="adminView" type="button">📊 Admin</button>
+        <button class="nav-pill" data-view="jwtView" type="button">🔑 JWT</button>
+      </nav>
+
+      <!-- Events View -->
+      <div id="eventsView" class="view-panel">
+        <div class="toolbar">
+          <form id="searchForm" class="search-bar">
+            <input id="searchInput" type="search" placeholder="Search events..." />
+            <button type="submit" class="btn btn-secondary">Search</button>
+          </form>
+          <button id="newEventBtn" class="btn btn-primary hidden" type="button">+ New Event</button>
+        </div>
+        <div id="eventsGrid" class="events-grid"></div>
+      </div>
+
+      <!-- Reservations View -->
+      <div id="reservationsView" class="view-panel hidden">
+        <div class="section-header">
+          <h2 id="reservationsTitle">My Reservations</h2>
+          <button id="refreshReservationsBtn" class="btn btn-secondary btn-sm" type="button">Refresh</button>
+        </div>
+        <div id="reservationsList" class="reservations-list"></div>
+      </div>
+
+      <!-- Admin View -->
+      <div id="adminView" class="view-panel hidden">
+        <div class="section-header">
+          <h2>System Statistics</h2>
+          <button id="refreshAdminBtn" class="btn btn-secondary btn-sm" type="button">Refresh</button>
+        </div>
+        <div id="statsGrid" class="stats-grid"></div>
+
+        <div class="section-header" style="margin-top: 2rem;">
+          <h2>User Management</h2>
+          <button id="newUserBtn" class="btn btn-primary btn-sm" type="button">+ Add User</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Full Name</th>
+                <th>Role</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- JWT Inspector View -->
+      <div id="jwtView" class="view-panel hidden">
+        <div class="card">
+          <h2>JWT Inspector &amp; Tamper Test</h2>
+          <p class="muted">Inspect the active Bearer token stored in your browser and test how the server rejects tampered tokens.</p>
+          <label>
+            Raw JWT Token
+            <textarea id="jwtRawInput" rows="4" class="mono-area"></textarea>
+          </label>
+          <div class="jwt-actions">
+            <button id="decodeJwtBtn" class="btn btn-secondary" type="button">Decode Token</button>
+            <button id="tamperJwtBtn" class="btn btn-danger" type="button">Tamper Payload &amp; Test /api/auth/me</button>
+          </div>
+          <div class="jwt-grid">
+            <div>
+              <h3>Header</h3>
+              <pre id="jwtHeaderOut" class="code-box">{}</pre>
+            </div>
+            <div>
+              <h3>Payload</h3>
+              <pre id="jwtPayloadOut" class="code-box">{}</pre>
+            </div>
+          </div>
+          <div id="tamperResult" class="alert hidden" style="margin-top: 1rem;"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Event Modal -->
+  <div id="eventModal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="eventModalTitle">Create Event</h3>
+        <button class="modal-close" data-close-modal="eventModal" type="button">&times;</button>
+      </div>
+      <form id="eventForm" class="form-stack">
+        <input id="eventIdInput" type="hidden" />
+        <label>Event Name <input id="eventNameInput" type="text" required /></label>
+        <label>Description <input id="eventDescInput" type="text" /></label>
+        <label>Venue <input id="eventVenueInput" type="text" required /></label>
+        <label>Event Date &amp; Time <input id="eventDateInput" type="datetime-local" required /></label>
+        <div class="form-row">
+          <label>Total Seats <input id="eventSeatsInput" type="number" min="1" required /></label>
+          <label>Ticket Price (Rs.) <input id="eventPriceInput" type="number" min="0" step="0.01" required /></label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" data-close-modal="eventModal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Event</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Book / Edit Reservation Modal -->
+  <div id="bookModal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="bookModalTitle">Book Tickets</h3>
+        <button class="modal-close" data-close-modal="bookModal" type="button">&times;</button>
+      </div>
+      <form id="bookForm" class="form-stack">
+        <input id="bookEventIdInput" type="hidden" />
+        <input id="bookReservationIdInput" type="hidden" />
+        <p id="bookEventSummary" class="muted"></p>
+        <label>
+          Number of Seats (1–10)
+          <input id="bookSeatsInput" type="number" min="1" max="10" value="2" required />
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" data-close-modal="bookModal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Confirm</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- User Modal (Admin) -->
+  <div id="userModal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="userModalTitle">Edit User</h3>
+        <button class="modal-close" data-close-modal="userModal" type="button">&times;</button>
+      </div>
+      <form id="userForm" class="form-stack">
+        <input id="userIdInput" type="hidden" />
+        <label id="userUsernameWrap">Username <input id="userUsernameInput" type="text" required /></label>
+        <label>Full Name <input id="userFullNameInput" type="text" required /></label>
+        <label>
+          Role
+          <select id="userRoleInput">
+            <option value="CUSTOMER">CUSTOMER</option>
+            <option value="ORGANIZER">ORGANIZER</option>
+            <option value="ADMIN">ADMIN</option>
+          </select>
+        </label>
+        <label>
+          Password <span class="muted">(leave blank to keep current when editing)</span>
+          <input id="userPasswordInput" type="password" minlength="6" />
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" data-close-modal="userModal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/assets/app.js"></script>
+</body>
+</html>
